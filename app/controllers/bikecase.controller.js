@@ -13,34 +13,48 @@ exports.create = (req, res) => {
     return;
   }
 
-  // Create a BikeCase
-  const bikecase = {
-    model: req.body.model,
-    sn: req.body.sn,
-    color: req.body.color,
-    place: req.body.place,
-    owner_name: req.body.owner_name,
-    theft_dt: req.body.theft_dt,
-    open_case_dt: open_case_dt,
-    close_case_dt: 0,
-    policeofficer_id: policeofficer_id,
-  };
+  var policeofficer_id = 0
+  var open_case_dt = 0
 
-  // Save BikeCase in the database
-  BikeCase.create(bikecase)
-    .then(data => {
-      if (police_officer !== null) {
-        police_officer.bikecase_id = data.id
-        police_officer.save()
-      }
-      res.send(data);
-    })
-    .catch(err => {
-      res.status(500).send({
-        message:
-          err.message || "Some error occurred while creating the BikeCase."
+  // Find free Police Officer
+  PoliceOfficer.findOne({ where: { bikecase_id: { [Op.eq]: 0 } } }).then(data => {
+    var police_officer = null
+
+    if (data !== null) {
+      police_officer = data
+      policeofficer_id = data.id
+      open_case_dt = Date.now()
+    }
+
+    // Create a BikeCase
+    const bikecase = {
+      model: req.body.model,
+      sn: req.body.sn,
+      color: req.body.color,
+      place: req.body.place,
+      owner_name: req.body.owner_name,
+      theft_dt: req.body.theft_dt,
+      open_case_dt: open_case_dt,
+      close_case_dt: 0,
+      policeofficer_id: policeofficer_id,
+    };
+
+    // Save BikeCase in the database
+    BikeCase.create(bikecase)
+      .then(data => {
+        if (police_officer !== null) {
+          police_officer.bikecase_id = data.id
+          police_officer.save()
+        }
+        res.send(data);
+      })
+      .catch(err => {
+        res.status(500).send({
+          message:
+            err.message || "Some error occurred while creating the BikeCase."
+        });
       });
-    });
+  })
 };
 
 // Retrieve all BikeCases from the database.
@@ -48,7 +62,7 @@ exports.findAll = (req, res) => {
   const model = req.query.model;
   var condition = model ? { model: { [Op.iLike]: `%${model}%` } } : null;
 
-  BikeCase.belongsTo(PoliceOfficer, { foreignKey: 'policeofficer_id' })
+  BikeCase.belongsTo(PoliceOfficer,{foreignKey: 'policeofficer_id'})
   BikeCase.findAll({
     where: condition, include: [{
       model: PoliceOfficer
@@ -143,6 +157,20 @@ exports.deleteAll = (req, res) => {
       res.status(500).send({
         message:
           err.message || "Some error occurred while removing all bikecases."
+      });
+    });
+};
+
+// find all published BikeCase
+exports.findAllPublished = (req, res) => {
+  BikeCase.findAll({ where: { published: true } })
+    .then(data => {
+      res.send(data);
+    })
+    .catch(err => {
+      res.status(500).send({
+        message:
+          err.message || "Some error occurred while retrieving bikecases."
       });
     });
 };

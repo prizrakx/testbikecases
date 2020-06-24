@@ -9,6 +9,9 @@ module.exports = app => {
   // Retrieve all Bike Cases
   router.get("/", policeofficers.findAll);
 
+  // Close current Bike Cases
+  router.post("/closebikecase", policeofficers.closeBikeCase);
+
   // Retrieve a single Bike Case with id
   router.get("/:id", policeofficers.findOne);
 

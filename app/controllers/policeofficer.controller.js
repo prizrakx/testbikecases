@@ -130,3 +130,59 @@ exports.deleteAll = (req, res) => {
       });
     });
 };
+
+// Close current Bike Case
+exports.closeBikeCase = (req, res) => {
+  const id = req.body.id;
+  if (!req.body.id) {
+    res.status(400).send({
+      message: "Content can not be empty!"
+    });
+    return;
+  }
+
+  PoliceOfficer.findByPk(id)
+    .then(data => {
+      const po = data;
+      if (data.bikecase_id === 0) {
+        res.status(500).send({
+          message: "Error close current Bike Case PoliceOfficer with id=" + id
+        });
+        return;
+      }
+
+      // Find and close Bike Case
+      BikeCase.findByPk(po.bikecase_id)
+        .then(data => {
+          data.close_case_dt = Date.now();
+          data.save();
+        })
+        .catch(err => {
+        });
+      
+      // Find free Bike Case
+      BikeCase.findOne({ where: { policeofficer_id: { [Op.eq]: 0 } } }).then(data => {
+        if (data !== null) {
+          po.bikecase_id = data.id;
+          data.policeofficer_id = po.id;
+          data.open_case_dt = Date.now();
+          data.save();
+        } else {
+          po.bikecase_id = 0;
+        }
+        po.save().then(data => {
+          res.send(data);
+        });
+      })
+      .catch(err => {
+        res.status(500).send({
+          message: "Error close current Bike Case PoliceOfficer with id=" + id
+        });
+      });
+    })
+    .catch(err => {
+      res.status(500).send({
+        message: "Error close current Bike Case PoliceOfficer with id=" + id
+      });
+    });
+};
