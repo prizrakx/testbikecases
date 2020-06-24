@@ -21,7 +21,7 @@ db.sequelize.sync();
 
 // Index page
 app.get("/", (req, res) => {
-  res.send("Welcome to Stolen Bike Cases application.");
+  res.sendfile('public/index.html');
 });
 
 require("./app/routes/bikecases.routes")(app);

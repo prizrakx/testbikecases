@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Stolen Bike Cases</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        table,
+        th,
+        td {
+            border: 1px solid black;
+            border-collapse: collapse;
+        }
+    </style>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
+        integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+</head>
+
+<body>
+    <div class="container">
+        <div id="app">
+            <div v-if="isMainBtnsVisible">
+                <button type="button" class="btn btn-primary" @click="showPoliceOfficersList">Police Officers</button><br><br>
+                <button type="button" class="btn btn-primary" @click="showBikeCasesList">Bike Cases</button><br><br>
+                <button type="button" class="btn btn-primary" @click="addBikeCase">Add Bike Case</button><br><br>
+            </div>
+
+            <div v-if="isPoliceOfficersTableVisible">
+                <table class="table table-bordered">
+                    <thead>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Current Bike Case</th>
+                        <th>Actions</th>
+                    </thead>
+                    <tbody>
+                        <tr v-for="item in policeofficers">
+                            <td>{{ item.id }}</td>
+                            <td>{{ item.name }}</td>
+                            <td>{{ 'Case #' + item.bikecase_id }}</td>
+                            <td><button v-if="item.bikecase_id != 0" type="button" class="btn btn-success" @click="closeBikeCase(item.id)">Close Bike Case</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <button type="button" class="btn btn-primary" @click="addPoliceOfficers">Add Police Officers</button>
+            </div>
+
+            <div v-if="isPoliceOfficersAddVisible">
+                <div class="form-group">
+                    <label for="policeofficerName">Name</label>
+                    <input class="form-control" id="policeofficerName" v-model="newpoliceofficer.name"><br>
+                </div>
+                <button type="button" class="btn btn-primary" @click="savePoliceOfficer">Save Police Officer</button>
+            </div>
+
+            <div v-if="isBikeCasesTableVisible">
+                <table class="table table-bordered">
+                    <thead>
+                        <th>ID</th>
+                        <th>Model</th>
+                        <th>SN</th>
+                        <th>Color</th>
+                        <th>Place</th>
+                        <th>Owner Name</th>
+                        <th>Date of theft</th>
+                        <th>Opening Date</th>
+                        <th>Police Officer</th>
+                        <th>Closing Date</th>
+                    </thead>
+                    <tbody>
+                        <tr v-for="item in bikecases">
+                            <td>{{ item.id }}</td>
+                            <td>{{ item.model }}</td>
+                            <td>{{ item.sn }}</td>
+                            <td>{{ item.color }}</td>
+                            <td>{{ item.place }}</td>
+                            <td>{{ item.owner_name }}</td>
+                            <td>{{ item.theft_dt }}</td>
+                            <td>{{ item.open_case_dt != '1970-01-01T00:00:00.000Z' ? item.open_case_dt : '' }}</td>
+                            <td>{{ item.policeofficer ? item.policeofficer.name : '' }}</td>
+                            <td>{{ item.close_case_dt != '1970-01-01T00:00:00.000Z' ? item.close_case_dt : '' }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div v-if="isBikeCasesAddVisible">
+                <div class="form-group">
+                    <label for="bikecase_model">Model</label>
+                    <input class="form-control" id="bikecase_model" v-model="newbikecase.model"><br>
+                </div>
+                <div class="form-group">
+                    <label for="bikecase_sn">SN</label>
+                    <input class="form-control" id="bikecase_sn" v-model="newbikecase.sn"><br>
+                </div>
+                <div class="form-group">
+                    <label for="bikecase_color">Color</label>
+                    <input class="form-control" id="bikecase_color" v-model="newbikecase.color"><br>
+                </div>
+                <div class="form-group">
+                    <label for="bikecase_place">Place</label>
+                    <input class="form-control" id="bikecase_place" v-model="newbikecase.place"><br>
+                </div>
+                <div class="form-group">
+                    <label for="bikecase_owner_name">Owner Name</label>
+                    <input class="form-control" id="bikecase_owner_name" v-model="newbikecase.owner_name"><br>
+                </div>
+                <div class="form-group">
+                    <label for="bikecase_theft_dt">Date of theft (example: 2020-12-31 23:59:59)</label>
+                    <input class="form-control" id="bikecase_theft_dt" v-model="newbikecase.theft_dt"><br>
+                </div>
+                <button type="button" class="btn btn-primary" @click="savePoliceOfficer">Add Bike Case</button>
+            </div>
+
+            <div v-if="!isMainBtnsVisible">
+                <br><br><button type="button" class="btn btn-primary" @click="returnToMain">Home</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        new Vue({
+            el: "#app",
+            data: {
+                isPoliceOfficersTableVisible: false,
+                isPoliceOfficersAddVisible: false,
+                isBikeCasesTableVisible: false,
+                isBikeCasesAddVisible: false,
+                isMainBtnsVisible: true,
+                policeofficers: [],
+                bikecases: [],
+                newpoliceofficer: {
+                    name: ""
+                },
+                newbikecase: {
+                    model: "",
+                    sn: "",
+                    color: "",
+                    place: "",
+                    owner_name: "",
+                    theft_dt: ""
+                }
+            },
+            methods: {
+                returnToMain() {
+                    this.isMainBtnsVisible = true
+                    this.isPoliceOfficersTableVisible = false
+                    this.isPoliceOfficersAddVisible = false
+                    this.isBikeCasesTableVisible = false
+                    this.isBikeCasesAddVisible = false
+                },
+                showPoliceOfficersList() {
+                    axios.get("/api/policeofficers").then((response) => {
+                        this.isMainBtnsVisible = false
+                        this.isPoliceOfficersTableVisible = true
+                        this.policeofficers = response.data
+                    })
+                },
+                addPoliceOfficers() {
+                    this.isPoliceOfficersTableVisible = false
+                    this.isPoliceOfficersAddVisible = true
+                    this.newpoliceofficer.name = ""
+                },
+                savePoliceOfficer() {
+                    axios.post("/api/policeofficers", { name: this.newpoliceofficer.name }).then((response) => {
+                        this.isPoliceOfficersAddVisible = false
+                        this.showPoliceOfficersList()
+                    })
+                },
+                showBikeCasesList() {
+                    axios.get("/api/bikecases").then((response) => {
+                        this.isMainBtnsVisible = false
+                        this.isBikeCasesTableVisible = true
+                        this.bikecases = response.data
+                    })
+                },
+                addBikeCase() {
+                    this.isMainBtnsVisible = false
+                    this.isBikeCasesAddVisible = true
+                },
+                savePoliceOfficer() {
+                    axios.post("/api/bikecases", { model: this.newbikecase.model, sn: this.newbikecase.sn, color: this.newbikecase.color, place: this.newbikecase.place, owner_name: this.newbikecase.owner_name, theft_dt: this.newbikecase.theft_dt }).then((response) => {
+                        this.isBikeCasesAddVisible = false
+                        this.showBikeCasesList()
+                    })
+                },
+                closeBikeCase: function (id) {
+                    axios.post("/api/policeofficers/closebikecase", { id: id }).then((response) => {
+                        this.showPoliceOfficersList()
+                    })
+                }
+            }
+        })
+    </script>
+</body>
+
+</html>
