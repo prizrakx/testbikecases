@@ -24,6 +24,9 @@ app.get("/", (req, res) => {
   res.send("Welcome to Stolen Bike Cases application.");
 });
 
+require("./app/routes/bikecases.routes")(app);
+require("./app/routes/policeofficers.routes")(app);
+
 // Set port, listen for requests
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
